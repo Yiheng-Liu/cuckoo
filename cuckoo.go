@@ -22,13 +22,18 @@ import (
 	"math/rand"
 )
 
-type bucket struct {
-	node  interface{}
+type KVPair struct {
+	key interface{}
+	val interface{}
+}
+
+type Bucket struct {
+	node  *KVPair
 	stash *list.List
 }
 
 type CuckooFilter struct {
-	Filter     map[uint32]*bucket
+	Filter     map[uint32]*Bucket
 	Seed       uint32
 	cycleCount byte
 	hasher     [3]HashFunc
@@ -38,7 +43,7 @@ type CuckooFilter struct {
 // if you want to use your own hash function, you can pass it, otherwise it will use default functions
 func NewCuckooFilter(dataSize int, seed uint32, hasher [3]HashFunc) *CuckooFilter {
 	cuckoo := &CuckooFilter{
-		Filter: make(map[uint32]*bucket, int(math.Ceil(float64(dataSize)*growParameter))),
+		Filter: make(map[uint32]*Bucket, int(math.Ceil(float64(dataSize)*growParameter))),
 	}
 	if seed != 0 {
 		cuckoo.Seed = seed
@@ -66,25 +71,28 @@ func (cf *CuckooFilter) ReSeed(seed uint32) {
 }
 
 // Insert data into Filter
-func (cf *CuckooFilter) Insert(data interface{}) bool {
+func (cf *CuckooFilter) Insert(data interface{}, value interface{}) bool {
 	cf.cycleCount += 1
 	key, ok := convert(data)
 	if !ok {
 		return false
 	}
-	if _, ok := cf.insert(data, key, cf.hasher[0]); ok {
+	if _, ok := cf.insert(data, value, key, cf.hasher[0]); ok {
 		return true
 	}
-	if _, ok := cf.insert(data, key, cf.hasher[1]); ok {
+	if _, ok := cf.insert(data, value, key, cf.hasher[1]); ok {
 		return true
 	}
-	if val, ok := cf.insert(data, key, cf.hasher[2]); ok {
+	if val, ok := cf.insert(data, value, key, cf.hasher[2]); ok {
 		return true
 	} else if cf.cycleCount < 3 {
 		kicked := val.node
 		deleteElement(val, kicked)
-		val.node = data
-		return cf.Insert(kicked)
+		val.node = &KVPair{
+			key: data,
+			val: value,
+		}
+		return cf.Insert(kicked.key, kicked.val)
 	}
 	return false
 }
@@ -113,21 +121,27 @@ func (cf *CuckooFilter) SearchAll(data interface{}) ([]uint32, bool) {
 	return []uint32{murmur3_32(key, cf.Seed), xx_32(key, cf.Seed), mem_32(key, cf.Seed)}, true
 }
 
-func (cf *CuckooFilter) insert(data interface{}, key uint32, hasher HashFunc) (*bucket, bool) {
+func (cf *CuckooFilter) insert(data interface{}, value interface{}, key uint32, hasher HashFunc) (*Bucket, bool) {
 	try := hasher(key, cf.Seed)
 	if val, ok := cf.Filter[try]; !ok {
-		cf.Filter[try] = &bucket{
-			node:  data,
+		cf.Filter[try] = &Bucket{
+			node: &KVPair{
+				key: data,
+				val: value,
+			},
 			stash: list.New(),
 		}
 		cf.cycleCount = 0
 		return val, true
 	} else if val.node == nil {
-		val.node = data
+		val.node = &KVPair{
+			key: data,
+			val: value,
+		}
 		cf.cycleCount = 0
 		return val, true
 	} else if cf.cycleCount == 3 {
-		return val, stashAppend(val, data, cf)
+		return val, stashAppend(val, data, value, cf)
 	}
 	return cf.Filter[try], false
 }

@@ -17,8 +17,9 @@ func TestCuckooFilter(t *testing.T) {
 	fmt.Println(cf)
 
 	data := []byte("abc")
+	val := []byte("val")
 	// insert an element
-	ok := cf.Insert(data)
+	ok := cf.Insert(data, val)
 	assert.True(t, ok)
 	fmt.Println(cf)
 
@@ -28,7 +29,7 @@ func TestCuckooFilter(t *testing.T) {
 	fmt.Println(cf)
 
 	// reinsert the same element
-	ok = cf.Insert("abc")
+	ok = cf.Insert("abc", "val")
 	assert.True(t, ok)
 	fmt.Println(cf)
 
@@ -41,10 +42,11 @@ func TestCuckooFilter(t *testing.T) {
 func TestScaleData(t *testing.T) {
 	size := 1000
 	dataset := generateBytes(size)
+	val := generateBytes(size)
 	cf := NewCuckooFilter(size, 0, [3]HashFunc{})
 	// test insert
 	for i := 0; i < len(dataset); i++ {
-		ok := cf.Insert(dataset[i])
+		ok := cf.Insert(dataset[i], val[i])
 		assert.True(t, ok)
 	}
 	// test delete
@@ -80,7 +82,7 @@ func TestInsertWithCollision(t *testing.T) {
 	dataset := generateBytes(size)
 	cf := NewCuckooFilter(size, 0, [3]HashFunc{mockHasher1, mockHasher2, mockHasher3})
 	for i := 0; i < len(dataset); i++ {
-		ok := cf.Insert(dataset[i])
+		ok := cf.Insert(dataset[i], "val")
 		assert.True(t, ok)
 		fmt.Println(cf)
 	}

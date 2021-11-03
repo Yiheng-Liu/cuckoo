@@ -6,23 +6,26 @@ import (
 	"unsafe"
 )
 
-// deleteElement deletes the element with given location from bucket
-func deleteElement(val *bucket, data interface{}) {
-	if reflect.DeepEqual(val.node, data) {
+// deleteElement deletes the element with given location from Bucket
+func deleteElement(val *Bucket, data interface{}) {
+	if reflect.DeepEqual(val.node.key, data) {
 		val.node = nil
 		return
 	}
 	for it := val.stash.Front(); it != val.stash.Back(); it = it.Next() {
-		if it.Value == data {
+		if it.Value.(*KVPair).key == data {
 			val.stash.Remove(it)
 			return
 		}
 	}
 }
 
-// stashAppend appends a data to a bucket
-func stashAppend(val *bucket, data interface{}, cf *CuckooFilter) bool {
-	val.stash.PushBack(data)
+// stashAppend appends a data to a Bucket
+func stashAppend(val *Bucket, data interface{}, value interface{}, cf *CuckooFilter) bool {
+	val.stash.PushBack(&KVPair{
+		key: data,
+		val: value,
+	})
 	cf.cycleCount = 0
 	return true
 }
