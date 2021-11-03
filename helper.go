@@ -8,13 +8,13 @@ import (
 
 // deleteElement deletes the element with given location from Bucket
 func deleteElement(val *Bucket, data interface{}) {
-	if reflect.DeepEqual(val.node.key, data) {
-		val.node = nil
+	if reflect.DeepEqual(val.Node.Key, data) {
+		val.Node = nil
 		return
 	}
-	for it := val.stash.Front(); it != val.stash.Back(); it = it.Next() {
-		if it.Value.(*KVPair).key == data {
-			val.stash.Remove(it)
+	for it := val.Stash.Front(); it != val.Stash.Back(); it = it.Next() {
+		if it.Value.(*KVPair).Key == data {
+			val.Stash.Remove(it)
 			return
 		}
 	}
@@ -22,9 +22,9 @@ func deleteElement(val *Bucket, data interface{}) {
 
 // stashAppend appends a data to a Bucket
 func stashAppend(val *Bucket, data interface{}, value interface{}, cf *CuckooFilter) bool {
-	val.stash.PushBack(&KVPair{
-		key: data,
-		val: value,
+	val.Stash.PushBack(&KVPair{
+		Key: data,
+		Val: value,
 	})
 	cf.cycleCount = 0
 	return true

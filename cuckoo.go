@@ -23,13 +23,13 @@ import (
 )
 
 type KVPair struct {
-	key interface{}
-	val interface{}
+	Key interface{}
+	Val interface{}
 }
 
 type Bucket struct {
-	node  *KVPair
-	stash *list.List
+	Node  *KVPair
+	Stash *list.List
 }
 
 type CuckooFilter struct {
@@ -86,13 +86,13 @@ func (cf *CuckooFilter) Insert(data interface{}, value interface{}) bool {
 	if val, ok := cf.insert(data, value, key, cf.hasher[2]); ok {
 		return true
 	} else if cf.cycleCount < 3 {
-		kicked := val.node
+		kicked := val.Node
 		deleteElement(val, kicked)
-		val.node = &KVPair{
-			key: data,
-			val: value,
+		val.Node = &KVPair{
+			Key: data,
+			Val: value,
 		}
-		return cf.Insert(kicked.key, kicked.val)
+		return cf.Insert(kicked.Key, kicked.Val)
 	}
 	return false
 }
@@ -125,18 +125,18 @@ func (cf *CuckooFilter) insert(data interface{}, value interface{}, key uint32, 
 	try := hasher(key, cf.Seed)
 	if val, ok := cf.Filter[try]; !ok {
 		cf.Filter[try] = &Bucket{
-			node: &KVPair{
-				key: data,
-				val: value,
+			Node: &KVPair{
+				Key: data,
+				Val: value,
 			},
-			stash: list.New(),
+			Stash: list.New(),
 		}
 		cf.cycleCount = 0
 		return val, true
-	} else if val.node == nil {
-		val.node = &KVPair{
-			key: data,
-			val: value,
+	} else if val.Node == nil {
+		val.Node = &KVPair{
+			Key: data,
+			Val: value,
 		}
 		cf.cycleCount = 0
 		return val, true
@@ -162,9 +162,9 @@ func (cf *CuckooFilter) String() string {
 	}
 	output := ""
 	for k, v := range cf.Filter {
-		output += fmt.Sprintf("--------[%v]--------\nnode=[%v]\n", k, v.node)
-		output += "stash = ["
-		for i := v.stash.Front(); i != nil; i = i.Next() {
+		output += fmt.Sprintf("--------[%v]--------\nnode=[%v]\n", k, v.Node)
+		output += "Stash = ["
+		for i := v.Stash.Front(); i != nil; i = i.Next() {
 			output += fmt.Sprintf("%v ", i.Value)
 		}
 		output += "]\n"

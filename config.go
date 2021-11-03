@@ -18,6 +18,6 @@ package cuckoo
 // configurable variables (for tuning the algorithm)
 const (
 	// now stashSize is a deprecation parameter
-	stashSize     = 0   // Size of stash
+	stashSize     = 0   // Size of Stash
 	growParameter = 1.2 // the parameter determine how much more space we need to alloc based on the dataSize
 )
