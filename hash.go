@@ -15,7 +15,7 @@
 
 package cuckoo
 
-type hashFunc func(k uint32, seed uint32) uint32
+type HashFunc func(k uint32, seed uint32) uint32
 
 const (
 	murmur3_c1_32 uint32 = 0xcc9e2d51

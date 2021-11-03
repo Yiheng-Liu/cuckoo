@@ -31,12 +31,12 @@ type CuckooFilter struct {
 	Filter     map[uint32]*bucket
 	Seed       uint32
 	cycleCount byte
-	hasher     [3]hashFunc
+	hasher     [3]HashFunc
 }
 
 // NewCuckooFilter creates a new cuckoo filter, if seed == 0, then will generate a new seed
 // if you want to use your own hash function, you can pass it, otherwise it will use default functions
-func NewCuckooFilter(dataSize int, seed uint32, hasher [3]hashFunc) *CuckooFilter {
+func NewCuckooFilter(dataSize int, seed uint32, hasher [3]HashFunc) *CuckooFilter {
 	cuckoo := &CuckooFilter{
 		Filter: make(map[uint32]*bucket, int(math.Ceil(float64(dataSize)*growParameter))),
 	}
@@ -113,7 +113,7 @@ func (cf *CuckooFilter) SearchAll(data interface{}) ([]uint32, bool) {
 	return []uint32{murmur3_32(key, cf.Seed), xx_32(key, cf.Seed), mem_32(key, cf.Seed)}, true
 }
 
-func (cf *CuckooFilter) insert(data interface{}, key uint32, hasher hashFunc) (*bucket, bool) {
+func (cf *CuckooFilter) insert(data interface{}, key uint32, hasher HashFunc) (*bucket, bool) {
 	try := hasher(key, cf.Seed)
 	if val, ok := cf.Filter[try]; !ok {
 		cf.Filter[try] = &bucket{
@@ -132,7 +132,7 @@ func (cf *CuckooFilter) insert(data interface{}, key uint32, hasher hashFunc) (*
 	return cf.Filter[try], false
 }
 
-func (cf *CuckooFilter) delete(data interface{}, key uint32, hasher hashFunc) bool {
+func (cf *CuckooFilter) delete(data interface{}, key uint32, hasher HashFunc) bool {
 	input := hasher(key, cf.Seed)
 	if val, ok := cf.Filter[input]; ok {
 		deleteElement(val, data)

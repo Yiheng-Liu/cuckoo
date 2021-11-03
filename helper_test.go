@@ -32,12 +32,12 @@ func Test_deleteElement(t *testing.T) {
 }
 
 func Test_arrayAppend(t *testing.T) {
-	cf := NewCuckooFilter(1, 0, [3]hashFunc{})
+	cf := NewCuckooFilter(1, 0, [3]HashFunc{})
 	cf.Filter[0] = &bucket{node: byte(1), stash: list.New()}
 	ok := stashAppend(cf.Filter[0], []byte("a"), cf)
 	assert.True(t, ok)
 
-	cf = NewCuckooFilter(1, 0, [3]hashFunc{})
+	cf = NewCuckooFilter(1, 0, [3]HashFunc{})
 	cf.Filter[0] = newElement()
 	cf.Filter[0].stash.PushBack(byte(5))
 	ok = stashAppend(cf.Filter[0], []byte("a"), cf)

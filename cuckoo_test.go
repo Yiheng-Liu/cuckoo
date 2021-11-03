@@ -13,7 +13,7 @@ const bytes = 3
 // basic test
 func TestCuckooFilter(t *testing.T) {
 	// new cuckoo filter
-	cf := NewCuckooFilter(3, 0, [3]hashFunc{})
+	cf := NewCuckooFilter(3, 0, [3]HashFunc{})
 	fmt.Println(cf)
 
 	data := []byte("abc")
@@ -41,7 +41,7 @@ func TestCuckooFilter(t *testing.T) {
 func TestScaleData(t *testing.T) {
 	size := 1000
 	dataset := generateBytes(size)
-	cf := NewCuckooFilter(size, 0, [3]hashFunc{})
+	cf := NewCuckooFilter(size, 0, [3]HashFunc{})
 	// test insert
 	for i := 0; i < len(dataset); i++ {
 		ok := cf.Insert(dataset[i])
@@ -78,7 +78,7 @@ func mockHasher3(key, seed uint32) uint32 {
 func TestInsertWithCollision(t *testing.T) {
 	size := 5
 	dataset := generateBytes(size)
-	cf := NewCuckooFilter(size, 0, [3]hashFunc{mockHasher1, mockHasher2, mockHasher3})
+	cf := NewCuckooFilter(size, 0, [3]HashFunc{mockHasher1, mockHasher2, mockHasher3})
 	for i := 0; i < len(dataset); i++ {
 		ok := cf.Insert(dataset[i])
 		assert.True(t, ok)
