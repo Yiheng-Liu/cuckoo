@@ -175,6 +175,22 @@ func (c *Cuckoo) Search(k Key) (v Value, ok bool) {
 	return
 }
 
+func (c *Cuckoo) SearchAll(k Key) [nhash]hash {
+	if k == 0 {
+		if c.zeroIsSet == false {
+			return [nhash]hash{}
+		}
+
+		return [nhash]hash{}
+	}
+
+	// TODO(utkan): SSE2/AVX2 version
+
+	var h [nhash]hash
+	c.dohash(k, &h)
+	return h
+}
+
 // Delete removes the item corresponding to the given key (if exists).
 func (c *Cuckoo) Delete(k Key) {
 	if c.tryDelete(k) == false {
