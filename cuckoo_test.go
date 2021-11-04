@@ -75,7 +75,7 @@ func init() {
 }
 
 func TestZero(t *testing.T) {
-	c := NewCuckoo(logsize)
+	c := NewCuckoo(logsize, 0)
 	var v Value
 
 	for i := 0; i < 10; i++ {
@@ -88,7 +88,7 @@ func TestZero(t *testing.T) {
 }
 
 func TestSimple(t *testing.T) {
-	c := NewCuckoo(DefaultLogSize)
+	c := NewCuckoo(DefaultLogSize, 0)
 	for k, v := range gmap {
 		c.Insert(k, v)
 	}
@@ -136,7 +136,7 @@ func TestMem(t *testing.T) {
 	runtime.GC()
 	before := readAlloc()
 
-	c := NewCuckoo(logsize)
+	c := NewCuckoo(logsize, 0)
 	for k, v := range gmap {
 		c.Insert(k, v)
 	}
@@ -151,7 +151,7 @@ func TestMem(t *testing.T) {
 }
 
 func BenchmarkCuckooInsert(b *testing.B) {
-	cbench = NewCuckoo(logsize)
+	cbench = NewCuckoo(logsize, 0)
 	b.ReportAllocs()
 	b.ResetTimer()
 

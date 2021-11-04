@@ -85,7 +85,7 @@ func init() {
 // Doing so will avoid grows, which are computationally expensive and require allocation.
 
 // Logsize mustn't exceed hashBits, defined in hash.go.
-func NewCuckoo(logsize int) *Cuckoo {
+func NewCuckoo(logsize int, seed uint32) *Cuckoo {
 	logsize -= bshift
 
 	if logsize <= 0 {
@@ -101,7 +101,13 @@ func NewCuckoo(logsize int) *Cuckoo {
 		logsize: logsize,
 	}
 
-	c.reseed()
+	if seed != 0 {
+		for i := 0; i < nhash; i++ {
+			c.seed[i] = hash(seed)
+		}
+	} else {
+		c.reseed()
+	}
 
 	return c
 }
