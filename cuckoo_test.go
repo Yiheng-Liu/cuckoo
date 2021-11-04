@@ -19,18 +19,30 @@ func TestCuckooFilter(t *testing.T) {
 	data := []byte("abc")
 	val := []byte("Val")
 	// insert an element
-	ok := cf.Insert(data, val)
+	index, ok := cf.Insert(data, val)
 	assert.True(t, ok)
+	fmt.Println(index)
 	fmt.Println(cf)
+
+	// search an existing element
+	loc, ok := cf.Search(data)
+	assert.True(t, ok)
+	fmt.Println(loc)
 
 	// delete an element
 	ok = cf.Delete(data)
 	assert.True(t, ok)
 	fmt.Println(cf)
 
+	// search a not existing element
+	loc, ok = cf.Search(data)
+	assert.False(t, ok)
+	fmt.Println(loc)
+
 	// reinsert the same element
-	ok = cf.Insert("abc", "Val")
+	index, ok = cf.Insert("abc", "Val")
 	assert.True(t, ok)
+	fmt.Println(index)
 	fmt.Println(cf)
 
 	// search all possible locations of an element
@@ -46,7 +58,7 @@ func TestScaleData(t *testing.T) {
 	cf := NewCuckooFilter(size, 0, [3]HashFunc{})
 	// test insert
 	for i := 0; i < len(dataset); i++ {
-		ok := cf.Insert(dataset[i], val[i])
+		_, ok := cf.Insert(dataset[i], val[i])
 		assert.True(t, ok)
 	}
 	// test delete
@@ -82,8 +94,9 @@ func TestInsertWithCollision(t *testing.T) {
 	dataset := generateBytes(size)
 	cf := NewCuckooFilter(size, 0, [3]HashFunc{mockHasher1, mockHasher2, mockHasher3})
 	for i := 0; i < len(dataset); i++ {
-		ok := cf.Insert(dataset[i], "Val")
+		index, ok := cf.Insert(dataset[i], "Val")
 		assert.True(t, ok)
+		fmt.Println(index)
 		fmt.Println(cf)
 	}
 }
