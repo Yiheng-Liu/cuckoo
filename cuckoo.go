@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"reflect"
 )
 
 type KVPair struct {
-	Key interface{}
-	Val interface{}
+	Key []byte
+	Val []byte
 }
 
 type Bucket struct {
@@ -72,7 +71,8 @@ func (cf *CuckooFilter) ReSeed(seed uint32) {
 }
 
 // Insert data into Filter
-func (cf *CuckooFilter) Insert(data interface{}, value interface{}) (uint32, bool) {
+// now only support insert []byte
+func (cf *CuckooFilter) Insert(data []byte, value []byte) (uint32, bool) {
 	cf.cycleCount += 1
 	key, ok := convert(data)
 	if !ok {
@@ -88,7 +88,7 @@ func (cf *CuckooFilter) Insert(data interface{}, value interface{}) (uint32, boo
 		return index, true
 	} else if cf.cycleCount < 3 {
 		kicked := val.Node
-		deleteElement(val, kicked)
+		deleteElement(val, kicked.Key)
 		val.Node = &KVPair{
 			Key: data,
 			Val: value,
@@ -99,7 +99,7 @@ func (cf *CuckooFilter) Insert(data interface{}, value interface{}) (uint32, boo
 }
 
 // Delete data from Filter
-func (cf *CuckooFilter) Delete(data interface{}) bool {
+func (cf *CuckooFilter) Delete(data []byte) bool {
 	key, ok := convert(data)
 	if !ok {
 		return false
@@ -122,7 +122,7 @@ func (cf *CuckooFilter) SearchAll(data interface{}) ([]uint32, bool) {
 	return []uint32{cf.hasher[0](key, cf.Seed), cf.hasher[1](key, cf.Seed), cf.hasher[2](key, cf.Seed)}, true
 }
 
-func (cf *CuckooFilter) Search(data interface{}) (uint32, bool) {
+func (cf *CuckooFilter) Search(data []byte) (uint32, bool) {
 	key, ok := convert(data)
 	if !ok {
 		return 0, ok
@@ -139,14 +139,14 @@ func (cf *CuckooFilter) Search(data interface{}) (uint32, bool) {
 	return 0, false
 }
 
-func (cf *CuckooFilter) search(data interface{}, hashFunc HashFunc, key uint32) (uint32, bool) {
+func (cf *CuckooFilter) search(data []byte, hashFunc HashFunc, key uint32) (uint32, bool) {
 	hashVal := hashFunc(key, cf.Seed)
 	if val, ok := cf.Filter[hashVal]; ok {
-		if val.Node != nil && reflect.DeepEqual(val.Node.Key, data) {
+		if val.Node != nil && isEqual(val.Node.Key, data) {
 			return hashVal, true
 		}
 		for i := val.Stash.Front(); i != nil; i = i.Next() {
-			if reflect.DeepEqual(i.Value.(*KVPair).Key, data) {
+			if isEqual(i.Value.(*KVPair).Key, data) {
 				return hashVal, true
 			}
 		}
@@ -154,7 +154,7 @@ func (cf *CuckooFilter) search(data interface{}, hashFunc HashFunc, key uint32) 
 	return 0, false
 }
 
-func (cf *CuckooFilter) insert(data interface{}, value interface{}, key uint32, hasher HashFunc) (uint32, *Bucket, bool) {
+func (cf *CuckooFilter) insert(data []byte, value []byte, key uint32, hasher HashFunc) (uint32, *Bucket, bool) {
 	try := hasher(key, cf.Seed)
 	if val, ok := cf.Filter[try]; !ok {
 		cf.Filter[try] = &Bucket{
@@ -179,7 +179,7 @@ func (cf *CuckooFilter) insert(data interface{}, value interface{}, key uint32, 
 	return try, cf.Filter[try], false
 }
 
-func (cf *CuckooFilter) delete(data interface{}, key uint32, hasher HashFunc) bool {
+func (cf *CuckooFilter) delete(data []byte, key uint32, hasher HashFunc) bool {
 	input := hasher(key, cf.Seed)
 	if val, ok := cf.Filter[input]; ok {
 		deleteElement(val, data)

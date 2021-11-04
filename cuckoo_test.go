@@ -40,7 +40,7 @@ func TestCuckooFilter(t *testing.T) {
 	fmt.Println(loc)
 
 	// reinsert the same element
-	index, ok = cf.Insert("abc", "Val")
+	index, ok = cf.Insert([]byte("abc"), []byte("Val"))
 	assert.True(t, ok)
 	fmt.Println(index)
 	fmt.Println(cf)
@@ -94,7 +94,7 @@ func TestInsertWithCollision(t *testing.T) {
 	dataset := generateBytes(size)
 	cf := NewCuckooFilter(size, 0, [3]HashFunc{mockHasher1, mockHasher2, mockHasher3})
 	for i := 0; i < len(dataset); i++ {
-		index, ok := cf.Insert(dataset[i], "Val")
+		index, ok := cf.Insert(dataset[i], []byte("Val"))
 		assert.True(t, ok)
 		fmt.Println(index)
 		fmt.Println(cf)

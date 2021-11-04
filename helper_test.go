@@ -12,46 +12,46 @@ import (
 func newElement() *Bucket {
 	b := &Bucket{
 		Node: &KVPair{
-			Key: byte(1),
-			Val: byte(2),
+			Key: []byte{1},
+			Val: []byte{2},
 		},
 		Stash: list.New(),
 	}
 	b.Stash.PushBack(&KVPair{
-		Key: byte(2),
-		Val: byte(2),
+		Key: []byte{2},
+		Val: []byte{2},
 	})
 	b.Stash.PushBack(&KVPair{
-		Key: byte(3),
-		Val: byte(2),
+		Key: []byte{3},
+		Val: []byte{2},
 	})
 	b.Stash.PushBack(&KVPair{
-		Key: byte(4),
-		Val: byte(2),
+		Key: []byte{4},
+		Val: []byte{2},
 	})
 	return b
 }
 
 func Test_deleteElement(t *testing.T) {
 	b := newElement()
-	deleteElement(b, byte(2))
-	assert.Equal(t, b.Stash.Front().Value.(*KVPair).Key, byte(3))
+	deleteElement(b, []byte{2})
+	assert.Equal(t, b.Stash.Front().Value.(*KVPair).Key, []byte{3})
 
 	b = newElement()
-	deleteElement(b, byte(1))
+	deleteElement(b, []byte{1})
 	assert.Equal(t, b.Node, (*KVPair)(unsafe.Pointer(nil)))
 
 	b = newElement()
-	deleteElement(b, -1)
-	assert.Equal(t, b.Node.Key, byte(1))
-	assert.Equal(t, b.Stash.Front().Value.(*KVPair).Key, byte(2))
+	deleteElement(b, []byte{10})
+	assert.Equal(t, b.Node.Key, []byte{1})
+	assert.Equal(t, b.Stash.Front().Value.(*KVPair).Key, []byte{2})
 }
 
 func Test_arrayAppend(t *testing.T) {
 	cf := NewCuckooFilter(1, 0, [3]HashFunc{})
 	cf.Filter[0] = &Bucket{Node: &KVPair{
-		Key: byte(1),
-		Val: byte(2),
+		Key: []byte{1},
+		Val: []byte{2},
 	}, Stash: list.New()}
 	ok := stashAppend(cf.Filter[0], []byte("a"), []byte("b"), cf)
 	assert.True(t, ok)
