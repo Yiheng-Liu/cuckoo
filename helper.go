@@ -8,12 +8,15 @@ import (
 
 // deleteElement deletes the element with given location from Bucket
 func deleteElement(val *Bucket, data interface{}) {
+	if val.Node == nil || val.Node.Key == nil {
+		return
+	}
 	if reflect.DeepEqual(val.Node.Key, data) {
 		val.Node = nil
 		return
 	}
 	for it := val.Stash.Front(); it != val.Stash.Back(); it = it.Next() {
-		if it.Value.(*KVPair).Key == data {
+		if reflect.DeepEqual(it.Value.(*KVPair).Key, data) {
 			val.Stash.Remove(it)
 			return
 		}
@@ -21,7 +24,7 @@ func deleteElement(val *Bucket, data interface{}) {
 }
 
 // stashAppend appends a data to a Bucket
-func stashAppend(val *Bucket, data interface{}, value interface{}, cf *CuckooFilter) bool {
+func stashAppend(val *Bucket, data []byte, value [2][]byte, cf *CuckooFilter) bool {
 	val.Stash.PushBack(&KVPair{
 		Key: data,
 		Val: value,

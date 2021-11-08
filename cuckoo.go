@@ -23,8 +23,8 @@ import (
 )
 
 type KVPair struct {
-	Key interface{}
-	Val interface{}
+	Key []byte
+	Val [2][]byte
 }
 
 type Bucket struct {
@@ -33,17 +33,20 @@ type Bucket struct {
 }
 
 type CuckooFilter struct {
-	Filter     map[uint32]*Bucket
+	Filter     []*Bucket
 	Seed       uint32
 	cycleCount byte
 	hasher     [3]HashFunc
+	size       int
 }
 
 // NewCuckooFilter creates a new cuckoo filter, if seed == 0, then will generate a new seed
 // if you want to use your own hash function, you can pass it, otherwise it will use default functions
 func NewCuckooFilter(dataSize int, seed uint32, hasher [3]HashFunc) *CuckooFilter {
+	size := int(math.Ceil(float64(dataSize) * growParameter))
 	cuckoo := &CuckooFilter{
-		Filter: make(map[uint32]*Bucket, int(math.Ceil(float64(dataSize)*growParameter))),
+		Filter: make([]*Bucket, size),
+		size:   size,
 	}
 	if seed != 0 {
 		cuckoo.Seed = seed
@@ -71,7 +74,7 @@ func (cf *CuckooFilter) ReSeed(seed uint32) {
 }
 
 // Insert data into Filter
-func (cf *CuckooFilter) Insert(data interface{}, value interface{}) bool {
+func (cf *CuckooFilter) Insert(data []byte, value [2][]byte) bool {
 	cf.cycleCount += 1
 	key, ok := convert(data)
 	if !ok {
@@ -118,12 +121,12 @@ func (cf *CuckooFilter) SearchAll(data interface{}) ([]uint32, bool) {
 	if !ok {
 		return nil, false
 	}
-	return []uint32{murmur3_32(key, cf.Seed), xx_32(key, cf.Seed), mem_32(key, cf.Seed)}, true
+	return []uint32{murmur3_32(key, cf.Seed) % uint32(cf.size), xx_32(key, cf.Seed) % uint32(cf.size), mem_32(key, cf.Seed) % uint32(cf.size)}, true
 }
 
-func (cf *CuckooFilter) insert(data interface{}, value interface{}, key uint32, hasher HashFunc) (*Bucket, bool) {
-	try := hasher(key, cf.Seed)
-	if val, ok := cf.Filter[try]; !ok {
+func (cf *CuckooFilter) insert(data []byte, value [2][]byte, key uint32, hasher HashFunc) (*Bucket, bool) {
+	try := hasher(key, cf.Seed) % uint32(cf.size)
+	if val := cf.Filter[try]; val == nil {
 		cf.Filter[try] = &Bucket{
 			Node: &KVPair{
 				Key: data,
@@ -147,12 +150,44 @@ func (cf *CuckooFilter) insert(data interface{}, value interface{}, key uint32, 
 }
 
 func (cf *CuckooFilter) delete(data interface{}, key uint32, hasher HashFunc) bool {
-	input := hasher(key, cf.Seed)
-	if val, ok := cf.Filter[input]; ok {
+	input := hasher(key, cf.Seed) % uint32(cf.size)
+	if val := cf.Filter[input]; val != nil {
 		deleteElement(val, data)
 		return true
 	}
 	return false
+}
+
+func (cf *CuckooFilter) StashUsed() int {
+	count := 0
+	for _, bucket := range cf.Filter {
+		if bucket != nil && bucket.Stash != nil {
+			count += bucket.Stash.Len()
+		}
+	}
+	return count
+}
+
+func (cf *CuckooFilter) LargestStash() int {
+	max := -1
+	for _, bucket := range cf.Filter {
+		if bucket != nil && bucket.Stash != nil {
+			if max < bucket.Stash.Len() {
+				max = bucket.Stash.Len()
+			}
+		}
+	}
+	return max
+}
+
+func (cf *CuckooFilter) LoadFactor() float64 {
+	totalUsed := 0
+	for _, bucket := range cf.Filter {
+		if bucket != nil {
+			totalUsed++
+		}
+	}
+	return float64(totalUsed) / float64(cf.size)
 }
 
 // fmt format
@@ -162,6 +197,9 @@ func (cf *CuckooFilter) String() string {
 	}
 	output := ""
 	for k, v := range cf.Filter {
+		if v == nil {
+			continue
+		}
 		output += fmt.Sprintf("--------[%v]--------\nnode=[%v]\n", k, v.Node)
 		output += "Stash = ["
 		for i := v.Stash.Front(); i != nil; i = i.Next() {
